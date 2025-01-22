@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Plantilla Basica
+Resources:
+  Tomcat:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+        Count: 1
+    Properties:
+      ImageId: ami-0e1bed4f06a3b463d
+      InstanceType: t2.small
+      KeyName: vockey
+      SecurityGroups:
+        - "SSH-ANYWERE"
+      UserData: 
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash -xe
+            exec > /tmp/userdata.log 2>&1
+            #====================================================================#
+            # PREPARAR BOOTSTRAP DE CFN HELPER SCRIPTS
+            #====================================================================#
+            apt update -y
+            apt install python3-pip -y
+            pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+            ln -s /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
+            #====================================================================#
+            # -----------------------> AQUI TU SCRIPT <--------------------------#
+            #====================================================================#
+            # Este tiene que ser tu ultima instruccion del script
+            # Recuerda modificar el valor del --resource al id lógico de la instancia
+            /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource Tomcat --region ${AWS::Region}
