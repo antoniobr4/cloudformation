@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09 
+Description: Plantilla para crear un Grupo de Seguridad y una instancia EC2 que permite trafico SSH, HTTP y acceso al puerto 8080 para Apache Tomcat.
+
+Resources: 
+  # Grupo de Seguridad 
+  SSHyHTTPyTomcatGrupoSeguridad: 
+    Type: AWS::EC2::SecurityGroup 
+    Properties: 
+      GroupDescription: Permite acceso SSH, HTTP y puerto 8080 desde cualquier direccion IP 
+      SecurityGroupIngress: 
+        - IpProtocol: tcp 
+          FromPort: 22 
+          ToPort: 22 
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp 
+          FromPort: 80 
+          ToPort: 80 
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp 
+          FromPort: 8080 
+          ToPort: 8080 
+          CidrIp: 0.0.0.0/0 
+
+  # Instancia EC2 
+  InstanciaEC2Plantilla: 
+    Type: AWS::EC2::Instance 
+    Properties: 
+      InstanceType: t2.small 
+      KeyName: vockey 
+      SecurityGroupIds: 
+        - !Ref SSHyHTTPyTomcatGrupoSeguridad # Vincula el grupo de seguridad creado 
+      ImageId: ami-0a313d6098716f372 # Ubuntu 20.04 LTS 
+      Tags: 
+        - Key: Name 
+          Value: TomcatServer 
+      UserData: 
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            apt-get update -y
+            apt-get install -y openjdk-11-jdk wget
+            cd /opt
+            wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.73/bin/apache-tomcat-9.0.73.tar.gz
+            tar -xzf apache-tomcat-9.0.73.tar.gz
+            mv apache-tomcat-9.0.73 tomcat
+            chmod +x tomcat/bin/*.sh
+            sed -i 's/8080/8080/g' tomcat/conf/server.xml
+            ./tomcat/bin/startup.sh
+            echo "Tomcat instalado y ejecutandose en el puerto 8080"
+
+Outputs: 
+  SecurityGroupId: 
+    Description: ID del Grupo de Seguridad creado 
+    Value: !Ref SSHyHTTPyTomcatGrupoSeguridad 
+
+  InstanceId: 
+    Description: ID de la instancia EC2 creada 
+    Value: !Ref InstanciaEC2Plantilla
