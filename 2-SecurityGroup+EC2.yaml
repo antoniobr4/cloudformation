@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09 
+Description: Crea una instancia EC2 con un Grupo de Seguridad que permite trafico SSH y HTTP desde cualquier direccion IP.
+ 
+Resources: 
+  # Grupo de Seguridad 
+  SecurityGroup: 
+    Type: AWS::EC2::SecurityGroup 
+    Properties: 
+      GroupDescription: Permite trafico SSH y HTTP desde cualquier direccion IP 
+      SecurityGroupIngress: 
+        - IpProtocol: tcp 
+          FromPort: 22 
+          ToPort: 22 
+          CidrIp: 0.0.0.0/0 
+        - IpProtocol: tcp 
+          FromPort: 80 
+          ToPort: 80 
+          CidrIp: 0.0.0.0/0 
+ 
+  # Instancia EC2 
+  InstanciaEC2Plantilla: 
+    Type: AWS::EC2::Instance 
+    Properties: 
+      InstanceType: t2.small 
+      KeyName: vockey 
+      SecurityGroupIds: 
+        - !Ref SecurityGroup 
+      ImageId: ami-0a313d6098716f372 
+      Tags: 
+        - Key: Name 
+          Value: TomcatServer 
